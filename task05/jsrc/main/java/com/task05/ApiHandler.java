@@ -43,7 +43,7 @@ public class ApiHandler implements RequestHandler<Map<String, Object>, Map<Strin
 		// Generate a numeric ID
 		Random random = new Random();
 		int numericId = random.nextInt(Integer.MAX_VALUE);  // Generate a random integer
-		itemValues.put("Id", new AttributeValue().withN(Integer.toString(numericId)));  // Use 'withN' for numeric values
+		itemValues.put("id", new AttributeValue().withN(Integer.toString(numericId)));  // Use 'withN' for numeric values
 
 		// Safely get 'principalId' and 'content' as String
 		String principalId = String.valueOf(request.getOrDefault("principalId", "defaultPrincipalId"));
