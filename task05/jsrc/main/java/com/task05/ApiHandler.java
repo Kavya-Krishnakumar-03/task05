@@ -7,6 +7,7 @@ import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.PutItemOutcome;
 import com.amazonaws.services.dynamodbv2.document.Table;
+import com.amazonaws.services.dynamodbv2.document.spec.ScanSpec;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
@@ -41,6 +42,25 @@ public class ApiHandler implements RequestHandler<Map<String, Object>, Map<Strin
 		AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard()
 				.withRegion("eu-central-1")
 				.build();
+
+		DynamoDB dynamoDB = new DynamoDB(client); //
+		Table sourceTable = dynamoDB.getTable("cmtr-cc4eb9d3-Events");
+		Table destinationTable = dynamoDB.getTable("cmtr-cc4eb9d3-Events-test");
+
+		try {
+			Item item;
+			ScanSpec scanSpec = new ScanSpec();
+			for (Item it : sourceTable.scan(scanSpec)) {
+				item = it;
+				destinationTable.putItem(item);
+			}
+		} catch (Exception e) {
+			System.err.println("Unable to copy data from sourceTableName to destinationTableName");
+			System.err.println(e.getMessage());
+		}//
+
+
+
 
 		Map<String, AttributeValue> itemValues = new HashMap<>();
 
