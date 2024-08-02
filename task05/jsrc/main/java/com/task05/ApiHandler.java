@@ -44,8 +44,8 @@ public class ApiHandler implements RequestHandler<Map<String, Object>, Map<Strin
 
 		Map<String, AttributeValue> itemValues = new HashMap<>();
 
-		long numericId = ThreadLocalRandom.current().nextLong(1,Long.MAX_VALUE);
-		itemValues.put("id", new AttributeValue().withN(String.valueOf(numericId)));
+		String uuid = UUID.randomUUID().toString();
+		itemValues.put("id", new AttributeValue().withS(uuid));
 
 		int principalId = (Integer) request.getOrDefault("principalId",0);
 		itemValues.put("principalId", new AttributeValue().withN(String.valueOf(principalId)));
@@ -64,7 +64,7 @@ public class ApiHandler implements RequestHandler<Map<String, Object>, Map<Strin
 		response.put("statusCode", 201);
 
 		Map<String,Object> event = new HashMap<>();
-		event.put("id",String.valueOf(numericId));
+		event.put("id",String.valueOf(uuid));
 		event.put("principalId", principalId);
 		event.put("createdAt", createdAt);
 
