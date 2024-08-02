@@ -62,7 +62,17 @@ public class ApiHandler implements RequestHandler<Map<String, Object>, Map<Strin
 
 		Map<String, Object> response = new HashMap<String, Object>();
 		response.put("statusCode", 201);
-		response.put("body", itemValues);
+
+		Map<String,Object> event = new HashMap<>();
+		event.put("id",String.valueOf(numericId));
+		event.put("principalId", principalId);
+		event.put("createdAt", createdAt);
+
+		Map<String,String> simpleBody = new HashMap<>();
+		body.forEach((key,value)->simpleBody.put(key,value.getS()));
+		event.put("body", simpleBody);
+
+		response.put("event", event);
 		return response;
 	}
 }
