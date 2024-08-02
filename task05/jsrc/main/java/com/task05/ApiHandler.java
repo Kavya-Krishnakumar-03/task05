@@ -16,17 +16,20 @@ import com.syndicate.deployment.annotations.lambda.LambdaHandler;
 import com.syndicate.deployment.annotations.resources.DependsOn;
 import com.syndicate.deployment.model.RetentionSetting;
 
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.random.RandomGenerator;
 
 @LambdaHandler(lambdaName = "api_handler",
-	roleName = "api_handler-role",
-	isPublishVersion = true,
-	aliasName = "${lambdas_alias_name}",
-	logsExpiration = RetentionSetting.SYNDICATE_ALIASES_SPECIFIED
+		roleName = "api_handler-role",
+		isPublishVersion = true,
+		aliasName = "${lambdas_alias_name}",
+		logsExpiration = RetentionSetting.SYNDICATE_ALIASES_SPECIFIED
 )
 @EnvironmentVariables(
 		@EnvironmentVariable(key="region", value="${region}")
@@ -41,15 +44,19 @@ public class ApiHandler implements RequestHandler<Map<String, Object>, Map<Strin
 
 		Map<String, AttributeValue> itemValues = new HashMap<>();
 
-		Random random = new Random();
-		int numericId = random.nextInt(Integer.MAX_VALUE);
-		itemValues.put("id", new AttributeValue().withN(Integer.toString(numericId)));
+		long numericId = ThreadLocalRandom.current().nextLong(1,Long.MAX_VALUE);
+		itemValues.put("id", new AttributeValue().withN(String.valueOf(numericId)));
 
-		String principalId = String.valueOf(request.getOrDefault("principalId", "defaultPrincipalId"));
-		String content = String.valueOf(request.getOrDefault("content", "defaultContent"));
+		int principalId = (Integer) request.getOrDefault("principalId",0);
+		itemValues.put("principalId", new AttributeValue().withN(String.valueOf(principalId)));
 
-		itemValues.put("principalId", new AttributeValue().withS(principalId));
-		itemValues.put("content", new AttributeValue().withS(content));
+		Map<String,String> content = (Map<String,String>) request.getOrDefault("content",new HashMap<>());
+		Map<String,AttributeValue> body = new HashMap<>();
+		content.forEach((key,value)->body.put(key, new AttributeValue().withS(value)));
+		itemValues.put("body", new AttributeValue().withM(body));
+
+		String createdAt = ZonedDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+		itemValues.put("createdAt", new AttributeValue().withS(createdAt));
 
 		client.putItem("cmtr-cc4eb9d3-Events", itemValues);
 
