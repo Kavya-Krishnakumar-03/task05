@@ -16,6 +16,7 @@
     "dependencies" : [ ],
     "event_sources" : [ ],
     "env_variables" : {
+      "TABLE_NAME" : "cmtr-cc4eb9d3-Events",
       "region" : "${region}"
     },
     "publish_version" : true,

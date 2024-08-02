@@ -32,64 +32,51 @@ import java.util.random.RandomGenerator;
 		aliasName = "${lambdas_alias_name}",
 		logsExpiration = RetentionSetting.SYNDICATE_ALIASES_SPECIFIED
 )
-@EnvironmentVariables(
-		@EnvironmentVariable(key="region", value="${region}")
-)
+@EnvironmentVariables({
+		@EnvironmentVariable(key="region", value="${region}"),
+		@EnvironmentVariable(key="TABLE_NAME", value="cmtr-cc4eb9d3-Events") // Default table name
+})
 public class ApiHandler implements RequestHandler<Map<String, Object>, Map<String, Object>> {
 
 	public Map<String, Object> handleRequest(Map<String, Object> request, Context context) {
-
 		AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard()
 				.withRegion("eu-central-1")
 				.build();
 
-		DynamoDB dynamoDB = new DynamoDB(client); //
-		Table sourceTable = dynamoDB.getTable("cmtr-cc4eb9d3-Events");
-		Table destinationTable = dynamoDB.getTable("cmtr-cc4eb9d3-Events-test");
-
-		try {
-			Item item;
-			ScanSpec scanSpec = new ScanSpec();
-			for (Item it : sourceTable.scan(scanSpec)) {
-				item = it;
-				destinationTable.putItem(item);
-			}
-		} catch (Exception e) {
-			System.err.println("Unable to copy data from sourceTableName to destinationTableName");
-			System.err.println(e.getMessage());
-		}//
-
-
-
+		String tableName = System.getenv("TABLE_NAME");
 
 		Map<String, AttributeValue> itemValues = new HashMap<>();
-
 		String uuid = UUID.randomUUID().toString();
 		itemValues.put("id", new AttributeValue().withS(uuid));
-
-		int principalId = (Integer) request.getOrDefault("principalId",0);
+		int principalId = (Integer) request.getOrDefault("principalId", 0);
 		itemValues.put("principalId", new AttributeValue().withN(String.valueOf(principalId)));
 
-		Map<String,String> content = (Map<String,String>) request.getOrDefault("content",new HashMap<>());
-		Map<String,AttributeValue> body = new HashMap<>();
-		content.forEach((key,value)->body.put(key, new AttributeValue().withS(value)));
+		Map<String, String> content = (Map<String, String>) request.getOrDefault("content", new HashMap<>());
+		Map<String, AttributeValue> body = new HashMap<>();
+		content.forEach((key, value) -> body.put(key, new AttributeValue().withS(value)));
 		itemValues.put("body", new AttributeValue().withM(body));
 
 		String createdAt = ZonedDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
 		itemValues.put("createdAt", new AttributeValue().withS(createdAt));
 
-		client.putItem("cmtr-cc4eb9d3-Events", itemValues);
+		context.getLogger().log("Putting item: " + itemValues + " into table: " + tableName);
+		try {
+			client.putItem(tableName, itemValues);
+		} catch (Exception e) {
+			context.getLogger().log("Error putting item to DynamoDB: " + e.getMessage());
+			throw e;
+		}
 
-		Map<String, Object> response = new HashMap<String, Object>();
+		Map<String, Object> response = new HashMap<>();
 		response.put("statusCode", 201);
 
-		Map<String,Object> event = new HashMap<>();
-		event.put("id",String.valueOf(uuid));
+		Map<String, Object> event = new HashMap<>();
+		event.put("id", uuid);
 		event.put("principalId", principalId);
 		event.put("createdAt", createdAt);
 
-		Map<String,String> simpleBody = new HashMap<>();
-		body.forEach((key,value)->simpleBody.put(key,value.getS()));
+		Map<String, String> simpleBody = new HashMap<>();
+		body.forEach((key, value) -> simpleBody.put(key, value.getS()));
 		event.put("body", simpleBody);
 
 		response.put("event", event);
