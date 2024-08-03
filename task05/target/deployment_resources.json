@@ -16,11 +16,9 @@
     "dependencies" : [ ],
     "event_sources" : [ ],
     "env_variables" : {
-      "TABLE_NAME" : "cmtr-cc4eb9d3-Events",
-      "region" : "${region}"
+      "target_table" : "${target_table}"
     },
-    "publish_version" : true,
-    "alias" : "${lambdas_alias_name}",
+    "publish_version" : false,
     "logs_expiration" : "${logs_expiration}",
     "snap_start" : "None"
   }
